@@ -1,0 +1,8 @@
+[server]
+host="localhost"
+port=8000
+
+[database]
+engine="postgres"
+url="postgres://amp:%40mPu5R@localhost/amp"
+
