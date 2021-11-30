@@ -1,0 +1,3 @@
+CREATE TABLE IF NOT EXISTS alert_meta (
+  id SERIAL PRIMARY KEY
+)

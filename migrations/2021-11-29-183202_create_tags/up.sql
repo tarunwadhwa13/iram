@@ -1,0 +1,6 @@
+CREATE TABLE IF NOT EXISTS alert_tags (
+  id SERIAL,
+  key VARCHAR NOT NULL,
+  value VARCHAR NOT NULL,
+  PRIMARY KEY(key, value)
+);
