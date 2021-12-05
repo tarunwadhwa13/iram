@@ -2,6 +2,7 @@ pub mod zabbix {
     /// This is used for interacting with Zabbix.
     /// Dev Note: All functions must be private since only implemented functions are to be used. Helper functions created must not be exposed
     use crate::alert_sources::AlertSourceInfo;
+    use std::collections::HashMap;
     use std::error::Error;
 
     use crate::errors::{UnsupportedError, ZabbixError};
@@ -12,10 +13,17 @@ pub mod zabbix {
     use crate::alert_sources::base::AlertSource;
     use crate::alert_sources::response::{Alert, AlertList};
 
+    use crate::alert_sources::zabbix::payload::{ActiveTrigger, Event};
+
+    fn default_result() -> jsonValue {
+        return jsonValue::Null;
+    }
+
     #[derive(Serialize, Deserialize, Debug)]
     pub struct ZabbixAPIResponse {
         pub jsonrpc: String,
         pub error: Option<ZabbixAPIError>,
+        #[serde(default = "default_result")]
         pub result: jsonValue,
         pub id: jsonValue,
     }
@@ -37,8 +45,9 @@ pub mod zabbix {
 
     type AuthKey = String;
 
-    impl ZabbixHandler {
-        pub fn new_from_object(obj: &AlertSourceInfo) -> Result<Self, Box<dyn Error>> {
+
+    impl AlertSource for ZabbixHandler {
+        fn new_from_object(obj: &AlertSourceInfo) -> Result<Self, Box<dyn Error>> {
             Ok(ZabbixHandler {
                 auth_key: "".to_string(),
                 auth_mechanism: obj.auth_type.to_string(),
@@ -47,9 +56,7 @@ pub mod zabbix {
                 identifier: obj.identifier.to_string(),
             })
         }
-    }
 
-    impl AlertSource for ZabbixHandler {
         fn get_source_name(&self) -> &str {
             "zabbix"
         }
@@ -71,33 +78,103 @@ pub mod zabbix {
                 )));
             };
 
-            let active_triggers = zbx_response.as_array().unwrap();
+            let active_triggers: Vec<ActiveTrigger> = serde_json::from_value(zbx_response).unwrap();
 
             log::info!("Active Triggers - {:?}", active_triggers);
-            println!("Active Triggers - {:?}", active_triggers);
 
-            let mut alert_list: Vec<Alert>= Vec::new();
+            // This will store final alerts to be returned
+            let mut alert_list: AlertList = Vec::new();
+
+            // this is used for storing alert corresponding to a trigger. This will be updated when we have event details
+            let mut alert_map: HashMap<String, HashMap<&str, jsonValue>> =
+                HashMap::with_capacity(active_triggers.len());
+
+            let mut event_ids: Vec<String> = Vec::new();
 
             for i in active_triggers.iter() {
-                let alert = Alert {
-                    source: "zabbix".to_string(),
-                    alert_start_time: "12345".to_string(),
-                    entity: "dummy".to_string(),
-                    alert_status: match &i["last_event"] {
-                        jsonValue::Object(v) => if v["acknowledged"] == 1 { "Acknowledged".to_string() } else { "New".to_string()}
-                        _ => {
-                            log::error!("Incompatible type for last_event key in alert. Returning default value");
-                            "Unknown".to_string()
-                        }
-                    },
-                    event_id: i["event_id"].as_u64().unwrap_or(0),
-                    priority: i["priority"].as_str().unwrap_or("Undefined").to_string(),
-                };
+                let mut groups = Vec::new();
+                for group in i.groups.iter() {
+                    groups.push(jsonValue::String(group.name.clone()));
+                }
 
-                alert_list.push(alert);
+                let trigger_id = i.triggerid.clone();
+                event_ids.push(i.lastEvent.eventid.clone());
+
+                let alert: HashMap<&str, jsonValue> = HashMap::from([
+                    (
+                        "source",
+                        jsonValue::String(self.get_source_name().to_string()),
+                    ),
+                    ("alert_start_time", jsonValue::String("12345".to_string())),
+                    ("subject", jsonValue::String(i.description.clone())),
+                    ("entity", jsonValue::String(i.hosts[0].name.clone())),
+                    ("groups", jsonValue::Array(groups)),
+                    ("trigger_id", jsonValue::String(trigger_id.clone())),
+                    (
+                        "alert_status",
+                        jsonValue::String(
+                            match i.lastEvent.acknowledged.as_str() {
+                                "0" => "New",
+                                "1" => "Acknowledged",
+                                _ => "Unknown",
+                            }
+                            .to_string(),
+                        ),
+                    ),
+                    ("event_id", jsonValue::String(i.lastEvent.eventid.clone())),
+                    (
+                        "priority",
+                        jsonValue::String(
+                            match i.priority.as_str() {
+                                "1" => "P1",
+                                "2" => "P2",
+                                "3" => "P3",
+                                "4" => "P4",
+                                _ => i.priority.as_str(),
+                            }
+                            .to_string(),
+                        ),
+                    ),
+                ]);
+
+                alert_map.insert(trigger_id.clone(), alert.clone());
             }
 
-            println!("Alert list - {:?}", alert_list);
+            // get event details for active trigger
+            let event_payload = get_event_query_payload(event_ids, &self.auth_key);
+            let event_response: jsonValue = query_zabbix(self, event_payload).unwrap();
+            if !event_response.is_array() {
+                return Err(Box::new(ZabbixError(
+                    "Expected active triggers response to be array.".to_string(),
+                )));
+            };
+
+            let events: Vec<Event> = serde_json::from_value(event_response).unwrap();
+
+            // parse events to get data
+            for event in events.iter() {
+                let objectid = event.objectid.clone();
+                // map event data to trigger data
+
+                let mut alert_info = alert_map.get(&objectid.clone()).unwrap();
+
+                // let alert = Alert {
+                //     source: alert_info.get("source").unwrap().to_string(),
+                //     event_id: String,
+                //     trigger_id: String,
+                //     subject: String,
+                //     entity: String,
+                //     groups: Vec<String>,
+                //     alert_start_time: String,
+                //     alert_age: String,
+                //     alert_status: String,
+                //     priority: String,
+                //     tags: HashMap<String, String>
+                // };
+
+                // alert_list.push(alert);
+            }
+
             Ok(alert_list)
         }
         fn acknowledge_alert(&self) -> bool {
@@ -145,6 +222,22 @@ pub mod zabbix {
         });
     }
 
+    fn get_event_query_payload(event_ids: Vec<String>, auth_key: &String) -> jsonValue {
+        return json!({
+            "jsonrpc": "2.0",
+            "method": "event.get",
+            "params": {
+                            "eventids": event_ids,
+                            "output": "extend",
+                            "select_acknowledges": "extend",
+                            "select_alerts": "extend",
+                            "selectTags": "extend",
+                        },
+            "auth": format!("{}", auth_key),
+            "id": 1
+        });
+    }
+
     fn get_zbx_authkey(
         zbx: &ZabbixHandler,
         check_if_valid: bool,
@@ -182,7 +275,7 @@ pub mod zabbix {
             }
             "BasicAuth" => {
                 // connect using username password
-                return create_new_session(zbx)
+                return create_new_session(zbx);
             }
             _ => {
                 return Err(Box::new(UnsupportedError(
@@ -281,6 +374,7 @@ pub mod zabbix {
         match response {
             Ok(res) => {
                 log::info!("Status code received from Zabbix - {}", res.status());
+                // json_response tries to be of type ZabbixAPIResponse since this has to be assigned to parsed_response eventually
                 let json_response = res.json();
                 match json_response {
                     Ok(zbx_message) => {

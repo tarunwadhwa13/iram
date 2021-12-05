@@ -2,6 +2,7 @@ pub mod base;
 pub mod response;
 pub mod zabbix;
 
+use crate::alert_sources::base::AlertSource;
 use std::error::Error;
 
 use crate::db::get_connection;
@@ -13,7 +14,7 @@ use crate::diesel::query_dsl::filter_dsl::FilterDsl;
 use crate::models::AlertSourceInfo;
 
 
-pub fn get_alert_source_handler(source: &str, identifier: &str) -> Result<impl base::AlertSource, Box<dyn Error>> {
+pub fn get_alert_source_handler(source: &str, identifier: &str) -> Result<impl AlertSource, Box<dyn Error>> {
 
     let connection = get_connection().unwrap();
 
