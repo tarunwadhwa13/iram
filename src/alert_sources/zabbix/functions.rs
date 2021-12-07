@@ -61,6 +61,10 @@ pub mod zabbix {
             "zabbix"
         }
 
+        fn process_webhook(&self) -> Result<AlertList, Box<dyn Error>> {
+            return Ok(Vec::new());
+        }
+
         fn get_active_alerts(&mut self) -> Result<AlertList, Box<dyn Error>> {
             log::debug!("Getting Active Alerts from Zabbix - {}", &self.identifier);
 

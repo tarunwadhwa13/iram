@@ -1,6 +1,7 @@
 use std::fmt;
 
 use std::error::Error;
+use actix_web::{error, Result};
 
 // Zabbix Error
 #[derive(Debug)]
@@ -84,3 +85,12 @@ impl Error for UnsupportedError {}
 impl Error for NewRelicError {}
 impl Error for ManageEngineError {}
 impl Error for SettingsError {}
+
+impl error::ResponseError for ZabbixError {}
+impl error::ResponseError for DBConnectionError {}
+impl error::ResponseError for GenericError {}
+impl error::ResponseError for GenericAlertSourceError {}
+impl error::ResponseError for UnsupportedError {}
+impl error::ResponseError for NewRelicError {}
+impl error::ResponseError for ManageEngineError {}
+impl error::ResponseError for SettingsError {}

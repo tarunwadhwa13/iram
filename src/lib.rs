@@ -1,11 +1,12 @@
-pub mod errors;
-pub mod settings;
+pub mod alert_sources;
 pub mod configstore;
 pub mod db;
-pub mod schema;
-pub mod models;
-pub mod alert_sources;
+pub mod errors;
 pub mod graphql;
+pub mod models;
+pub mod orchestrator;
+pub mod schema;
+pub mod settings;
 
 #[macro_use]
 extern crate diesel;
