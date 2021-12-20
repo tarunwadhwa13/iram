@@ -1,5 +1,7 @@
 pub mod schema;
 
+use crate::settings;
+
 use actix_web::{web, Error, HttpResponse};
 use juniper::http::graphiql::graphiql_source;
 use juniper::http::GraphQLRequest;
@@ -8,7 +10,7 @@ use std::sync::Arc;
 
 pub fn register_graphql_service(cfg: &mut web::ServiceConfig) {
     let graphql_schema = std::sync::Arc::new(create_schema());
-    cfg.app_data(graphql_schema.clone());
+    cfg.data(graphql_schema.clone());
     cfg.service(web::resource("/graphql").route(web::post().to(graphql)));
     cfg.service(web::resource("/graphiql").route(web::get().to(graphiql)));
 }
@@ -21,6 +23,7 @@ async fn graphiql() -> HttpResponse {
 }
 
 async fn graphql(
+    _config: web::Data<settings::Settings>,
     st: web::Data<Arc<Schema>>,
     data: web::Json<GraphQLRequest>,
 ) -> Result<HttpResponse, Error> {

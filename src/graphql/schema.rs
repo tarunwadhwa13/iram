@@ -10,22 +10,35 @@ struct AlertEvent {
     id: String,
     source: String,
     created_at: String,
+    last_updated: String,
     age: String,
-    entity: String
+    entity: String,
+    subject: String,
+    priority: String,
+    status: String
 }
+
+type AlertList = Vec<AlertEvent>;
 
 pub struct QueryRoot;
 
 #[juniper::graphql_object]
 impl QueryRoot {
-    fn alert_event(_id: String) -> FieldResult<AlertEvent> {
-        Ok(AlertEvent {
+    fn active_alerts() -> FieldResult<AlertList> {
+        let alert = AlertEvent {
             id: "1234".to_owned(),
             source: "Luke".to_owned(),
             created_at: "2020-10-10 02:30:04".to_owned(),
+            last_updated: "2020-10-10 02:30:04".to_owned(),
             age: "2m".to_owned(),
-            entity: "Unknown".to_owned()
-        })
+            entity: "Unknown".to_owned(),
+            subject: "Unknown".to_owned(),
+            status: "New".to_owned(),
+            priority: "P2".to_owned()
+        };
+        let mut alert_list: AlertList = Vec::new();
+        alert_list.push(alert);
+        return Ok(alert_list);
     }
 }
 
@@ -47,8 +60,12 @@ impl MutationRoot {
             id: "1234".to_owned(),
             source: alert.source,
             created_at: "2020-10-10 02:30:04".to_owned(),
+            last_updated: "2020-10-10 02:30:04".to_owned(),
             age: "2m".to_owned(),
-            entity: "Unknown".to_owned()
+            entity: "Unknown".to_owned(),
+            status: "New".to_owned(),
+            subject: "Unknown".to_owned(),
+            priority: "P2".to_owned()
         })
     }
 }
