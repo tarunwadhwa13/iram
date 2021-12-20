@@ -6,14 +6,19 @@ use actix_cors::Cors;
 use log::info;
 use log4rs;
 
-use amp::configstore::CONFIG;
-use amp::graphql::register_graphql_service;
-use amp::orchestrator::handle_webhook;
+use iram::configstore::CONFIG;
+use iram::graphql::register_graphql_service;
+use iram::orchestrator::handle_webhook;
+use iram::db;
+
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     println!("🚀 Booting Up Systems 🚀");
     log4rs::init_file("config/log_config.yml", Default::default()).unwrap();
+
+    println!("✅ Checking connection to downstream services ✅");
+    let _ = db::get_connection();
 
     println!(
         "✨ Starting Alert Monitoring Platform ✨ !!

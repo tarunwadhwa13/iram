@@ -1,7 +1,7 @@
 use std::fmt;
 
 use std::error::Error;
-use actix_web::{error, Result};
+use actix_web::{error};
 
 // Zabbix Error
 #[derive(Debug)]

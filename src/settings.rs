@@ -34,8 +34,8 @@ impl Settings {
         s.merge(File::with_name(CONFIG_FILE_PATH))?;
         s.merge(File::with_name(&format!("{}{}", CONFIG_FILE_PREFIX, env)))?;
 
-        // This makes it so "AMP_SERVER__PORT overrides server.port
-        s.merge(Environment::with_prefix("amp").separator("__"))?;
+        // This makes it so "IRAM_SERVER__PORT overrides server.port
+        s.merge(Environment::with_prefix("iram").separator("__"))?;
 
         s.try_into()
     }

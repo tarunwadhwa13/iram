@@ -1,5 +1,5 @@
 [package]
-name = "amp"
+name = "iram"
 version = "0.1.0"
 authors = ["Tarun Wadhwa <tarunwadhwa13@gmail.com>"]
 edition = "2018"

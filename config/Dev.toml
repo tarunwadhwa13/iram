@@ -4,5 +4,4 @@ port=8000
 
 [database]
 engine="postgres"
-url="postgres://amp:%40mPu5R@localhost/amp"
-
+url="postgres://iram:Ir%40Mu5R@localhost/iram"

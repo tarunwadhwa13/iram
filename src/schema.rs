@@ -31,6 +31,14 @@ table! {
 }
 
 table! {
+    group_permissions (group_id, permission) {
+        group_id -> Int4,
+        permission -> Varchar,
+        enabled -> Bool,
+    }
+}
+
+table! {
     groups (id) {
         id -> Int4,
         name -> Varchar,
@@ -57,7 +65,7 @@ table! {
 table! {
     user_permissions (permission) {
         permission -> Varchar,
-        enabled -> Bool,
+        description -> Nullable<Text>,
     }
 }
 
@@ -76,6 +84,8 @@ table! {
     }
 }
 
+joinable!(group_permissions -> groups (group_id));
+joinable!(group_permissions -> user_permissions (permission));
 joinable!(user_groups -> groups (group_id));
 joinable!(user_groups -> users (user_id));
 joinable!(user_notes -> alert_event (alert_event_id));
@@ -86,6 +96,7 @@ allow_tables_to_appear_in_same_query!(
     alert_meta,
     alert_source_info,
     alert_tags,
+    group_permissions,
     groups,
     user_groups,
     user_notes,

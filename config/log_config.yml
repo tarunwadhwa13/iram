@@ -46,7 +46,7 @@ loggers:
     appenders:
       - app_log
     additive: false
-  amp:
+  iram:
     level: debug
     appenders:
       - app_log

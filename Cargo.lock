@@ -304,26 +304,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "amp"
-version = "0.1.0"
-dependencies = [
- "actix-cors",
- "actix-web",
- "actix-web-httpauth",
- "chrono",
- "config",
- "diesel",
- "juniper",
- "jwt-simple",
- "lazy_static",
- "log",
- "log4rs",
- "reqwest",
- "serde 1.0.130",
- "serde_json",
-]
-
-[[package]]
 name = "anyhow"
 version = "1.0.43"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1294,6 +1274,26 @@ name = "ipnet"
 version = "2.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "68f2d64f2edebec4ce84ad108148e67e1064789bee435edc5b60ad398714a3a9"
+
+[[package]]
+name = "iram"
+version = "0.1.0"
+dependencies = [
+ "actix-cors",
+ "actix-web",
+ "actix-web-httpauth",
+ "chrono",
+ "config",
+ "diesel",
+ "juniper",
+ "jwt-simple",
+ "lazy_static",
+ "log",
+ "log4rs",
+ "reqwest",
+ "serde 1.0.130",
+ "serde_json",
+]
 
 [[package]]
 name = "itoa"
