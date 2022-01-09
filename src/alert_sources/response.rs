@@ -12,7 +12,7 @@ pub struct Alert {
     pub alert_age: String,
     pub alert_status: String,
     pub priority: String,
-    pub tags: HashMap<String, String>
+    pub tags: HashMap<String, String>,
 }
 
 pub type AlertList = Vec<Alert>;

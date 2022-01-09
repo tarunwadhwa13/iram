@@ -1,1 +1,0 @@
-DROP table alert_meta;

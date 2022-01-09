@@ -1,3 +1,0 @@
-CREATE TABLE IF NOT EXISTS alert_event (
-  id SERIAL PRIMARY KEY
-)

@@ -1,19 +1,18 @@
 use serde::{Deserialize, Serialize};
-use serde_json::{Value};
+use serde_json::Value;
 use std::collections::HashMap;
-
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Group {
     pub groupid: String,
-    pub name: String
+    pub name: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Host {
     pub hostid: String,
     pub name: String,
-    pub host: String
+    pub host: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -24,7 +23,7 @@ pub struct LastEvent {
     pub clock: String,
     pub objectid: String,
     #[serde(flatten)]
-    pub extra: HashMap<String, Value>
+    pub extra: HashMap<String, Value>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -61,5 +60,5 @@ pub struct Event {
     pub suppressed: String,
     pub tags: Vec<Tag>,
     #[serde(flatten)]
-    pub extra: HashMap<String, Value>
+    pub extra: HashMap<String, Value>,
 }

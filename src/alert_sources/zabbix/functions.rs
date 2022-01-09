@@ -45,7 +45,6 @@ pub mod zabbix {
 
     type AuthKey = String;
 
-
     impl AlertSource for ZabbixHandler {
         fn new_from_object(obj: &AlertSourceInfo) -> Result<Self, Box<dyn Error>> {
             Ok(ZabbixHandler {

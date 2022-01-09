@@ -1,7 +1,7 @@
 use std::fmt;
 
+use actix_web::error;
 use std::error::Error;
-use actix_web::{error};
 
 // Zabbix Error
 #[derive(Debug)]
@@ -27,7 +27,6 @@ pub struct SettingsError(pub String); // used in settings module
 
 #[derive(Debug)]
 pub struct UnsupportedError(pub String); // used when attribute is unsupported
-
 
 impl fmt::Display for ZabbixError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

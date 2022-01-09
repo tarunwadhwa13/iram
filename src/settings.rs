@@ -24,7 +24,6 @@ pub struct Settings {
 const CONFIG_FILE_PATH: &str = "./config/Default.toml";
 const CONFIG_FILE_PREFIX: &str = "./config/";
 
-
 impl Settings {
     pub fn new() -> Result<Self, ConfigError> {
         let env = std::env::var("RUN_ENV").unwrap_or_else(|_| "Dev".into());
