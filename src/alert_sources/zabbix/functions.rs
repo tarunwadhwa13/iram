@@ -46,14 +46,14 @@ pub mod zabbix {
     type AuthKey = String;
 
     impl AlertSource for ZabbixHandler {
-        fn new_from_object(obj: &AlertSourceInfo) -> Result<Self, Box<dyn Error>> {
-            Ok(ZabbixHandler {
+        fn new_from_object(obj: &AlertSourceInfo) -> Self {
+            ZabbixHandler {
                 auth_key: "".to_string(),
                 auth_mechanism: obj.auth_type.to_string(),
                 connect_url: obj.connect_url.to_string(),
                 connection_params: obj.connection_params.clone(),
                 identifier: obj.identifier.to_string(),
-            })
+            }
         }
 
         fn get_source_name(&self) -> &str {

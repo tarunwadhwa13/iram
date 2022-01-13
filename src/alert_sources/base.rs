@@ -7,7 +7,7 @@ use std::error::Error;
 /// Every Alert source must implement this trait
 pub trait AlertSource {
     /// function for creating alert source object from database returned params
-    fn new_from_object(obj: &AlertSourceInfo) -> Result<Self, Box<dyn Error>>
+    fn new_from_object(obj: &AlertSourceInfo) -> Self
     where
         Self: std::marker::Sized;
 

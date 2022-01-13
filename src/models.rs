@@ -54,5 +54,11 @@ pub struct Users {
     pub email: String,
     pub is_admin: bool,
     pub last_login: Option<DateTime<Utc>>,
-    pub date_joined: Option<DateTime<Utc>>
+    pub date_joined: Option<DateTime<Utc>>,
+}
+
+impl Users {
+    pub fn get_password(&self) -> String {
+        self.password.clone()
+    }
 }

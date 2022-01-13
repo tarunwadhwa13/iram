@@ -1,4 +1,3 @@
-use crate::alert_sources::base::AlertSource;
 use crate::alert_sources::get_alert_source_handler;
 use actix_web::{web, HttpRequest, Responder, Result};
 use serde::Serialize;

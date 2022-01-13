@@ -1,9 +1,13 @@
 pub mod base;
+pub mod new_relic;
 pub mod response;
 pub mod zabbix;
 
 use crate::alert_sources::base::AlertSource;
 use std::error::Error;
+
+use new_relic::NewRelic::NewRelicHandler;
+use zabbix::zabbix::ZabbixHandler;
 
 use crate::db::get_connection;
 use crate::errors::{GenericAlertSourceError, UnsupportedError};
@@ -16,7 +20,7 @@ use diesel::{ExpressionMethods, PgTextExpressionMethods, RunQueryDsl};
 pub fn get_alert_source_handler(
     source: &str,
     identifier: &str,
-) -> Result<impl AlertSource, Box<dyn Error>> {
+) -> Result<Box<dyn AlertSource>, Box<dyn Error>> {
     let connection = get_connection().unwrap();
 
     let source_query = source.replace(&['%', '.', '\'', ' '][..], "");
@@ -41,7 +45,14 @@ pub fn get_alert_source_handler(
         let alert_source_details = &query_response[0];
         match source.to_lowercase().as_str() {
             "zabbix" => {
-                return zabbix::zabbix::ZabbixHandler::new_from_object(alert_source_details);
+                return Ok(Box::new(ZabbixHandler::new_from_object(
+                    alert_source_details,
+                )));
+            }
+            "newrelic" => {
+                return Ok(Box::new(NewRelicHandler::new_from_object(
+                    alert_source_details,
+                )));
             }
             _ => {
                 let err_msg = format!("The source type - {} is not supported yet", source);

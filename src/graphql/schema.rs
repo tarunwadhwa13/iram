@@ -1,14 +1,14 @@
 use crate::diesel::QueryDsl;
-use juniper::{ FieldResult, FieldError};
-use juniper::{EmptySubscription, RootNode};
 use juniper::graphql_value;
+use juniper::{EmptySubscription, RootNode};
+use juniper::{FieldError, FieldResult};
 
-use juniper::{GraphQLInputObject, GraphQLObject};
 use crate::db::get_connection;
+use juniper::{GraphQLInputObject, GraphQLObject};
 
-use crate::errors::{GenericAlertSourceError};
+use crate::errors::GenericAlertSourceError;
 use crate::models::{AlertSourceInfo, Alerts, Users};
-use crate::schema::{alerts, alert_source_info, users};
+use crate::schema::{alert_source_info, alerts, users};
 use diesel::{ExpressionMethods, RunQueryDsl};
 
 #[derive(GraphQLObject)]
@@ -24,7 +24,7 @@ struct AlertEvent {
     priority: String,
     state: String,
     description: String,
-    assigned_to: String
+    assigned_to: String,
 }
 
 type AlertList = Vec<AlertEvent>;
@@ -37,12 +37,12 @@ impl QueryRoot {
         let connection = get_connection().unwrap();
 
         let query_response = alerts::dsl::alerts
-        .inner_join(alert_source_info::table)
-        .inner_join(users::table)
-        .filter(alert_source_info::dsl::enabled.eq(true))
-        .filter(alerts::dsl::state.ne("resolved".to_string()))
-        .load::<(Alerts, AlertSourceInfo, Users)>(&connection)
-        .expect("Encountered DB Error while loading alerts assigned to user");
+            .inner_join(alert_source_info::table)
+            .inner_join(users::table)
+            .filter(alert_source_info::dsl::enabled.eq(true))
+            .filter(alerts::dsl::state.ne("resolved".to_string()))
+            .load::<(Alerts, AlertSourceInfo, Users)>(&connection)
+            .expect("Encountered DB Error while loading alerts assigned to user");
 
         log::info!("Got {} active alerts", query_response.len());
 
@@ -63,7 +63,7 @@ impl QueryRoot {
                 state: alert.state,
                 priority: alert.priority,
                 description: alert.description,
-                assigned_to: user.username
+                assigned_to: user.username,
             };
             alert_list.push(event);
         }
@@ -74,12 +74,12 @@ impl QueryRoot {
         let connection = get_connection().unwrap();
 
         let query_response = alerts::dsl::alerts
-        .inner_join(alert_source_info::table)
-        .inner_join(users::table)
-        .filter(alert_source_info::dsl::enabled.eq(true))
-        .filter(alerts::dsl::state.eq("resolved".to_string()))
-        .load::<(Alerts, AlertSourceInfo, Users)>(&connection)
-        .expect("Encountered DB Error while loading alerts assigned to user");
+            .inner_join(alert_source_info::table)
+            .inner_join(users::table)
+            .filter(alert_source_info::dsl::enabled.eq(true))
+            .filter(alerts::dsl::state.eq("resolved".to_string()))
+            .load::<(Alerts, AlertSourceInfo, Users)>(&connection)
+            .expect("Encountered DB Error while loading alerts assigned to user");
 
         log::info!("Got {} past alerts", query_response.len());
 
@@ -100,7 +100,7 @@ impl QueryRoot {
                 state: alert.state,
                 priority: alert.priority,
                 description: alert.description,
-                assigned_to: user.username
+                assigned_to: user.username,
             };
             alert_list.push(event);
         }
@@ -111,19 +111,26 @@ impl QueryRoot {
         let connection = get_connection().unwrap();
 
         let query_response = alerts::dsl::alerts
-        .inner_join(alert_source_info::table)
-        .inner_join(users::table)
-        .filter(alert_source_info::dsl::enabled.eq(true))
-        .filter(alerts::dsl::state.ne("resolved".to_string()))
-        .filter(alerts::dsl::assigned_user_id.eq(user_id))
-        .load::<(Alerts, AlertSourceInfo, Users)>(&connection)
-        .expect("Encountered DB Error while loading alerts assigned to user");
+            .inner_join(alert_source_info::table)
+            .inner_join(users::table)
+            .filter(alert_source_info::dsl::enabled.eq(true))
+            .filter(alerts::dsl::state.ne("resolved".to_string()))
+            .filter(alerts::dsl::assigned_user_id.eq(user_id))
+            .load::<(Alerts, AlertSourceInfo, Users)>(&connection)
+            .expect("Encountered DB Error while loading alerts assigned to user");
 
-        log::info!("Got {} active alerts assigned to user - {}", query_response.len(), user_id);
+        log::info!(
+            "Got {} active alerts assigned to user - {}",
+            query_response.len(),
+            user_id
+        );
 
         if query_response.len() == 0 {
             let err_msg = "No active alert assigned to requested user found in database";
-            return Err(FieldError::new(GenericAlertSourceError(err_msg.to_string()), graphql_value!({ "internal_error": ""})));
+            return Err(FieldError::new(
+                GenericAlertSourceError(err_msg.to_string()),
+                graphql_value!({ "internal_error": ""}),
+            ));
         } else {
             let mut alert_list: AlertList = Vec::new();
             for entry in query_response.into_iter() {
@@ -142,27 +149,12 @@ impl QueryRoot {
                     state: alert.state,
                     priority: alert.priority,
                     description: alert.description,
-                    assigned_to: user.username
+                    assigned_to: user.username,
                 };
                 alert_list.push(event);
             }
             return Ok(alert_list);
         }
-
-        // let alert = AlertEvent {
-        //     id: "1234".to_owned(),
-        //     source: "New Relic".to_owned(),
-        //     created_at: "2020-10-10 02:30:04".to_owned(),
-        //     last_updated: "2020-10-10 02:30:04".to_owned(),
-        //     age: "2m".to_owned(),
-        //     entity: "Unknown".to_owned(),
-        //     subject: "Unknown".to_owned(),
-        //     status: "New".to_owned(),
-        //     priority: "P2".to_owned(),
-        // };
-        // let mut alert_list: AlertList = Vec::new();
-        // alert_list.push(alert);
-        // return Ok(alert_list);
     }
 }
 
