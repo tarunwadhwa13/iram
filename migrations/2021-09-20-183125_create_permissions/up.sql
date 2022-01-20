@@ -20,4 +20,9 @@ VALUES
     ('create_allsubscription', 'Can add new subscription for any user'),
     ('view_allsubscription', 'Can view all subscriptions'),
     ('update_allsubscription', 'Can update all subscriptions'),
-    ('delete_allsubscription', 'Can delete add subscriptions')
+    ('delete_allsubscription', 'Can delete add subscriptions'),
+    ('create_ir', 'Can add new IR'),
+    ('view_ir', 'Can view added IR'),
+    ('update_ir', 'Can update existing IR'),
+    ('delete_ir', 'Can delete existing IR')
+    

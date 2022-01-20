@@ -61,6 +61,28 @@ table! {
 }
 
 table! {
+    incident_alert (incident_id, alert_id) {
+        incident_id -> Int4,
+        alert_id -> Int4,
+    }
+}
+
+table! {
+    incident_report (id) {
+        id -> Int4,
+        segments_lost -> Numeric,
+        loss_details -> Text,
+        cost -> Numeric,
+        tta -> Interval,
+        ttr -> Nullable<Interval>,
+        status -> Varchar,
+        resolution -> Text,
+        created_at -> Nullable<Timestamptz>,
+        last_updated -> Nullable<Timestamptz>,
+    }
+}
+
+table! {
     permission (key) {
         key -> Varchar,
         description -> Nullable<Text>,
@@ -113,7 +135,8 @@ joinable!(alert_tags -> tags (tag_id));
 joinable!(alerts -> alert_source_info (source_id));
 joinable!(alerts -> users (assigned_user_id));
 joinable!(group_permissions -> groups (group_id));
-joinable!(group_permissions -> permission (permission_key));
+joinable!(incident_alert -> alerts (alert_id));
+joinable!(incident_alert -> incident_report (incident_id));
 joinable!(user_groups -> groups (group_id));
 joinable!(user_groups -> users (user_id));
 joinable!(user_notes -> alerts (alert_id));
@@ -126,6 +149,8 @@ allow_tables_to_appear_in_same_query!(
     alerts,
     group_permissions,
     groups,
+    incident_alert,
+    incident_report,
     permission,
     tags,
     user_groups,

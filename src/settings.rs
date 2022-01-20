@@ -15,10 +15,18 @@ pub struct Database {
 }
 
 #[derive(Debug, Deserialize, Clone)]
+pub struct SelectedFeature<T> {
+    pub supported: Vec<T>,
+    pub enabled: Vec<T>,
+}
+
+#[derive(Debug, Deserialize, Clone)]
 pub struct Settings {
     pub server: Server,
     pub env: ENV,
     pub database: Database,
+    pub alert_sources: SelectedFeature<String>,
+    pub auth_backends: SelectedFeature<String>,
 }
 
 const CONFIG_FILE_PATH: &str = "./config/Default.toml";
