@@ -21,8 +21,8 @@ table! {
     alert_timeline (id) {
         id -> Int4,
         event_type -> Varchar,
-        reported_at -> Nullable<Timestamptz>,
-        event_info -> Nullable<Text>,
+        reported_at -> Timestamptz,
+        event_info -> Varchar,
     }
 }
 
@@ -35,7 +35,7 @@ table! {
         state -> Varchar,
         assigned_user_id -> Nullable<Int4>,
         subject -> Varchar,
-        description -> Text,
+        description -> Varchar,
         priority -> Varchar,
         entity -> Varchar,
         entity_group -> Varchar,
@@ -71,21 +71,21 @@ table! {
     incident_report (id) {
         id -> Int4,
         segments_lost -> Numeric,
-        loss_details -> Text,
+        loss_details -> Varchar,
         cost -> Numeric,
-        tta -> Interval,
-        ttr -> Nullable<Interval>,
+        acked_at -> Timestamptz,
+        resolved_at -> Nullable<Timestamptz>,
         status -> Varchar,
-        resolution -> Text,
-        created_at -> Nullable<Timestamptz>,
-        last_updated -> Nullable<Timestamptz>,
+        resolution -> Varchar,
+        created_at -> Timestamptz,
+        last_updated -> Timestamptz,
     }
 }
 
 table! {
     permission (key) {
         key -> Varchar,
-        description -> Nullable<Text>,
+        description -> Varchar,
     }
 }
 
@@ -107,7 +107,7 @@ table! {
 table! {
     user_notes (id) {
         id -> Int4,
-        note -> Nullable<Text>,
+        note -> Varchar,
         user_id -> Nullable<Int4>,
         alert_id -> Nullable<Int4>,
         visibility -> Varchar,
@@ -120,7 +120,7 @@ table! {
     users (id) {
         id -> Int4,
         username -> Varchar,
-        password -> Text,
+        password -> Varchar,
         is_active -> Bool,
         first_name -> Varchar,
         last_name -> Varchar,
@@ -131,6 +131,7 @@ table! {
     }
 }
 
+joinable!(alert_tags -> alerts (alert_id));
 joinable!(alert_tags -> tags (tag_id));
 joinable!(alerts -> alert_source_info (source_id));
 joinable!(alerts -> users (assigned_user_id));

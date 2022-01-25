@@ -1,177 +1,105 @@
-use crate::diesel::QueryDsl;
-use juniper::graphql_value;
+use super::controller;
+use super::defs::{
+    GQLAlertEvent, GQLAlertList, GQLIncidentReport, GQLIncidentReportList, GQLNewAlertEvent,
+};
+use bigdecimal::ToPrimitive;
+use juniper::FieldResult;
 use juniper::{EmptySubscription, RootNode};
-use juniper::{FieldError, FieldResult};
-
-use crate::db::get_connection;
-use juniper::{GraphQLInputObject, GraphQLObject};
-
-use crate::errors::GenericAlertSourceError;
-use crate::models::{AlertSourceInfo, Alerts, Users};
-use crate::schema::{alert_source_info, alerts, users};
-use diesel::{ExpressionMethods, RunQueryDsl};
-
-#[derive(GraphQLObject)]
-struct AlertEvent {
-    id: String,
-    source_type: String,
-    source: String,
-    created_at: String,
-    last_updated: String,
-    age: String,
-    entity: String,
-    subject: String,
-    priority: String,
-    state: String,
-    description: String,
-    assigned_to: String,
-}
-
-type AlertList = Vec<AlertEvent>;
+use std::collections::HashMap;
 
 pub struct QueryRoot;
 
 #[juniper::graphql_object]
 impl QueryRoot {
-    fn active_alerts() -> FieldResult<AlertList> {
-        let connection = get_connection().unwrap();
+    fn active_alerts() -> FieldResult<GQLAlertList> {
+        let query_response = controller::get_active_alerts();
 
-        let query_response = alerts::dsl::alerts
-            .inner_join(alert_source_info::table)
-            .inner_join(users::table)
-            .filter(alert_source_info::dsl::enabled.eq(true))
-            .filter(alerts::dsl::state.ne("resolved".to_string()))
-            .load::<(Alerts, AlertSourceInfo, Users)>(&connection)
-            .expect("Encountered DB Error while loading alerts assigned to user");
-
-        log::info!("Got {} active alerts", query_response.len());
-
-        let mut alert_list: AlertList = Vec::new();
+        let mut alert_list: GQLAlertList = Vec::new();
         for entry in query_response.into_iter() {
             let alert = entry.0;
             let alert_source = entry.1;
             let user = entry.2;
-            let event = AlertEvent {
-                id: alert.id.to_string(),
-                source_type: alert_source.source_type,
-                source: alert_source.identifier,
-                created_at: alert.created_at.to_string(),
-                last_updated: alert.last_updated.to_string(),
-                age: (chrono::Local::now().signed_duration_since(alert.created_at)).to_string(),
-                entity: alert.entity,
-                subject: alert.subject,
-                state: alert.state,
-                priority: alert.priority,
-                description: alert.description,
-                assigned_to: user.username,
-            };
+            let event = GQLAlertEvent::generate_from_db_objects(alert, alert_source, user);
             alert_list.push(event);
         }
         return Ok(alert_list);
     }
 
-    fn past_alerts(_time_limit: i32) -> FieldResult<AlertList> {
-        let connection = get_connection().unwrap();
+    fn past_alerts(_time_limit: i32) -> FieldResult<GQLAlertList> {
+        let query_response = controller::get_past_alerts();
 
-        let query_response = alerts::dsl::alerts
-            .inner_join(alert_source_info::table)
-            .inner_join(users::table)
-            .filter(alert_source_info::dsl::enabled.eq(true))
-            .filter(alerts::dsl::state.eq("resolved".to_string()))
-            .load::<(Alerts, AlertSourceInfo, Users)>(&connection)
-            .expect("Encountered DB Error while loading alerts assigned to user");
-
-        log::info!("Got {} past alerts", query_response.len());
-
-        let mut alert_list: AlertList = Vec::new();
+        let mut alert_list: GQLAlertList = Vec::new();
         for entry in query_response.into_iter() {
             let alert = entry.0;
             let alert_source = entry.1;
             let user = entry.2;
-            let event = AlertEvent {
-                id: alert.id.to_string(),
-                source_type: alert_source.source_type,
-                source: alert_source.identifier,
-                created_at: alert.created_at.to_string(),
-                last_updated: alert.last_updated.to_string(),
-                age: (chrono::Local::now().signed_duration_since(alert.created_at)).to_string(),
-                entity: alert.entity,
-                subject: alert.subject,
-                state: alert.state,
-                priority: alert.priority,
-                description: alert.description,
-                assigned_to: user.username,
-            };
+            let event = GQLAlertEvent::generate_from_db_objects(alert, alert_source, user);
             alert_list.push(event);
         }
         return Ok(alert_list);
     }
 
-    fn assigned_alerts(user_id: i32) -> FieldResult<AlertList> {
-        let connection = get_connection().unwrap();
+    fn assigned_alerts(user_id: i32) -> FieldResult<GQLAlertList> {
+        let query_response = controller::get_assigned_alerts(user_id);
 
-        let query_response = alerts::dsl::alerts
-            .inner_join(alert_source_info::table)
-            .inner_join(users::table)
-            .filter(alert_source_info::dsl::enabled.eq(true))
-            .filter(alerts::dsl::state.ne("resolved".to_string()))
-            .filter(alerts::dsl::assigned_user_id.eq(user_id))
-            .load::<(Alerts, AlertSourceInfo, Users)>(&connection)
-            .expect("Encountered DB Error while loading alerts assigned to user");
+        let mut alert_list: GQLAlertList = Vec::new();
+        for entry in query_response.into_iter() {
+            let alert = entry.0;
+            let alert_source = entry.1;
+            let user = entry.2;
+            let event = GQLAlertEvent::generate_from_db_objects(alert, alert_source, user);
+            alert_list.push(event);
+        }
+        return Ok(alert_list);
+    }
 
-        log::info!(
-            "Got {} active alerts assigned to user - {}",
-            query_response.len(),
-            user_id
-        );
+    fn incident_reports() -> FieldResult<GQLIncidentReportList> {
+        let query_response = controller::get_incident_reports();
 
-        if query_response.len() == 0 {
-            let err_msg = "No active alert assigned to requested user found in database";
-            return Err(FieldError::new(
-                GenericAlertSourceError(err_msg.to_string()),
-                graphql_value!({ "internal_error": ""}),
-            ));
-        } else {
-            let mut alert_list: AlertList = Vec::new();
-            for entry in query_response.into_iter() {
-                let alert = entry.0;
-                let alert_source = entry.1;
-                let user = entry.2;
-                let event = AlertEvent {
-                    id: alert.id.to_string(),
-                    source_type: alert_source.source_type,
-                    source: alert_source.identifier,
-                    created_at: alert.created_at.to_string(),
-                    last_updated: alert.last_updated.to_string(),
-                    age: (chrono::Local::now().signed_duration_since(alert.created_at)).to_string(),
-                    entity: alert.entity,
-                    subject: alert.subject,
-                    state: alert.state,
-                    priority: alert.priority,
-                    description: alert.description,
-                    assigned_to: user.username,
+        let mut incidents: HashMap<i32, GQLIncidentReport> = HashMap::new();
+
+        let alert_list: GQLIncidentReportList;
+        for entry in query_response.into_iter() {
+            let _incident_alert = entry.0;
+            let incident_report = entry.1;
+            let alert = entry.2 .0;
+            let alert_source = entry.2 .1;
+            let user = entry.2 .2;
+            let event = GQLAlertEvent::generate_from_db_objects(alert, alert_source, user);
+
+            if incidents.contains_key(&incident_report.id) {
+                // assume incident related info is present. Just add alert
+                incidents
+                    .get_mut(&incident_report.id)
+                    .unwrap()
+                    .add_alert(event);
+            } else {
+                let incident_obj = GQLIncidentReport {
+                    id: incident_report.id.to_string(),
+                    segments_lost: incident_report.segments_lost.to_f64().unwrap_or(-1.0),
+                    loss_details: incident_report.loss_details.to_string(),
+                    cost: incident_report.cost.to_f64().unwrap_or(-1.0),
+                    acked_at: incident_report.acked_at_str(),
+                    resolved_at: incident_report.resolved_at_str().unwrap_or("".to_string()),
+                    status: incident_report.status.to_string(),
+                    resolution: incident_report.resolution.to_string(),
+                    created_at: incident_report.created_at_str(),
+                    last_updated: incident_report.last_updated_str(),
+                    linked_alerts: Vec::from([event]),
                 };
-                alert_list.push(event);
+                incidents.insert(incident_report.id, incident_obj);
             }
-            return Ok(alert_list);
         }
+        alert_list = incidents.into_values().collect();
+        return Ok(alert_list);
     }
-}
-
-#[derive(GraphQLInputObject)]
-#[graphql(description = "An alert event which needs attention")]
-struct NewAlertEvent {
-    source: String,
-    created_at: String,
-    age: String,
-    entity: String,
 }
 
 pub struct MutationRoot;
 
 #[juniper::graphql_object]
 impl MutationRoot {
-    fn create_human(_alert: NewAlertEvent) -> FieldResult<bool> {
+    fn create_human(_alert: GQLNewAlertEvent) -> FieldResult<bool> {
         Ok(true)
     }
 }

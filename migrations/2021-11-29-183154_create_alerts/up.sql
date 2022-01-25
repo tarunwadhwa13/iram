@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS alerts (
   state VARCHAR NOT NULL,
   assigned_user_id INT REFERENCES users(id) ON DELETE SET NULL,
   subject VARCHAR NOT NULL,
-  description TEXT NOT NULL,
+  description VARCHAR NOT NULL,
   priority VARCHAR NOT NULL,
   entity VARCHAR NOT NULL,
   entity_group VARCHAR NOT NULL,

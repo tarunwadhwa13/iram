@@ -19,6 +19,7 @@ log = "0.4.14"
 log4rs = "1.0.0"
 chrono = "0.4"
 reqwest = { version = "0.11.9", features = ["blocking", "json"] }
-diesel = { version = "1.4.8", features = ["postgres", "r2d2", "serde_json", "chrono"] }
+diesel = { version = "1.4.8", features = ["postgres", "r2d2", "serde_json", "chrono", "numeric"] }
 juniper = "0.15.7"
 bcrypt = "0.10.1"
+bigdecimal = "0.1.2"

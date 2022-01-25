@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS permission (
     key VARCHAR PRIMARY KEY,
-    description TEXT
+    description VARCHAR NOT NULL
 );
 
 INSERT INTO permission(key, description)

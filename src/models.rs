@@ -1,5 +1,6 @@
 use super::schema::alert_source_info;
 use chrono::{DateTime, Utc};
+use bigdecimal::BigDecimal;
 
 // Using #[derive(Queryable)] assumes that the order of fields in struct
 // matches the columns in table, so make sure to define them in the order seen in the schema.rs file.
@@ -53,12 +54,80 @@ pub struct Users {
     pub last_name: String,
     pub email: String,
     pub is_admin: bool,
-    pub last_login: Option<DateTime<Utc>>,
-    pub date_joined: Option<DateTime<Utc>>,
+    last_login: Option<DateTime<Utc>>,
+    date_joined: Option<DateTime<Utc>>,
 }
 
 impl Users {
     pub fn get_password(&self) -> String {
         self.password.clone()
     }
+    pub fn last_login(&self) -> Option<DateTime<Utc>> {
+        self.last_login
+    }
+    pub fn date_joined(&self) -> Option<DateTime<Utc>> {
+        self.date_joined
+    }
+
+    pub fn last_login_str(&self) -> Option<String> {
+        match self.last_login() {
+            Some(result) => return Some(result.to_rfc3339()),
+            None => return None
+        };
+    }
+
+    pub fn date_joined_str(&self) -> Option<String> {
+        match self.date_joined() {
+            Some(result) => return Some(result.to_rfc3339()),
+            None => return None
+        };
+    }
+}
+
+#[derive(Queryable, PartialEq, Clone)]
+pub struct IncidentReport {
+    pub id: i32,
+    pub segments_lost: BigDecimal,
+    pub loss_details: String,
+    pub cost: BigDecimal,
+    pub acked_at: DateTime<Utc>,
+    pub resolved_at: Option<DateTime<Utc>>,
+    pub status: String,
+    pub resolution: String,
+    created_at: DateTime<Utc>,
+    last_updated: DateTime<Utc>
+}
+
+impl IncidentReport {
+    pub fn created_at(&self) -> DateTime<Utc> {
+        self.created_at
+    }
+    pub fn last_updated(&self) -> DateTime<Utc> {
+        self.last_updated
+    }
+
+    pub fn created_at_str(&self) -> String {
+        self.created_at().to_rfc3339()
+    }
+
+    pub fn last_updated_str(&self) -> String {
+        self.last_updated().to_rfc3339() 
+    }
+
+    pub fn acked_at_str(&self) -> String {
+        self.acked_at.to_rfc3339()
+    }
+
+    pub fn resolved_at_str(&self) -> Option<String> {
+        match self.resolved_at {
+            Some(value) => Some(value.to_rfc3339()),
+            None => None
+        }
+    }
+}
+
+#[derive(Queryable, PartialEq, Clone)]
+pub struct IncidentAlert {
+    pub incident_id: i32,
+    pub alert_id: i32
 }
