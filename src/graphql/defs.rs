@@ -1,4 +1,4 @@
-use juniper::{GraphQLObject, GraphQLInputObject};
+use juniper::{GraphQLInputObject, GraphQLObject};
 
 // Here, struct names can be same as db Models. Hence to remove possibility of duplicacy, we add GQL (short for Graphql) as prefix for all structs
 
@@ -12,7 +12,7 @@ pub struct GQLUser {
     pub email: String,
     pub is_admin: bool,
     pub last_login: String,
-    pub date_joined: String
+    pub date_joined: String,
 }
 
 #[derive(GraphQLObject)]
@@ -45,7 +45,7 @@ pub struct GQLIncidentReport {
     pub resolution: String,
     pub created_at: String,
     pub last_updated: String,
-    pub linked_alerts: Vec<GQLAlertEvent>
+    pub linked_alerts: Vec<GQLAlertEvent>,
 }
 
 impl GQLIncidentReport {
@@ -56,12 +56,29 @@ impl GQLIncidentReport {
 
 pub type GQLIncidentReportList = Vec<GQLIncidentReport>;
 
-#[derive(GraphQLInputObject)]
-#[graphql(description = "An alert event which needs attention")]
-pub struct GQLNewAlertEvent {
-    pub source: String,
-    pub created_at: String,
-    pub age: String,
-    pub entity: String,
+// #[derive(GraphQLObject)]
+// pub struct GQLSubscription {
+
+// }
+
+#[derive(GraphQLObject)]
+pub struct GQLAlertSource {
+    pub id: i32,
+    pub source_type: String,
+    pub identifier: String,
+    pub connect_url: String,
+    pub auth_type: String,
+    pub enabled: bool, // connection_params can have sensitive data. Do not expose it
 }
 
+pub type GQLAlertSourceList = Vec<GQLAlertSource>;
+
+#[derive(GraphQLInputObject)]
+pub struct GQLNewAlertSource {
+    pub source_type: String,
+    pub identifier: String,
+    pub connect_url: String,
+    pub connection_params: String, // json should be encoded as string
+    pub auth_type: String,
+    pub enabled: bool,
+}

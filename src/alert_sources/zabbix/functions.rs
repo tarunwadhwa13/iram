@@ -60,6 +60,74 @@ pub mod zabbix {
             "zabbix"
         }
 
+        fn test_connection(&mut self) -> bool {
+            let auth_key: AuthKey;
+            match get_zbx_authkey(self, true) {
+                Ok(key) => self.auth_key = key,
+                Err(e) => {
+                    log::error!("Error getting API Key - {}", e.to_string());
+                    return false;
+                }
+            };
+
+            // test connection to Zabbix
+            let connection_payload = json!({
+                "jsonrpc": "2.0",
+                "method": "apiinfo.version",
+                "params": [],
+                "id": 1
+            });
+
+            let zbx_response: String;
+            match query_zabbix(self, connection_payload) {
+                Ok(response) => {
+                    if !response.is_string() {
+                        log::error!("Response - {:?} is not string", &response);
+                        return false;
+                    };
+                    if let Some(i) = response.as_str() {
+                        zbx_response = i.to_string();
+                    } else {
+                        log::error!("Error parsing zabbix version from response");
+                        return false;
+                    }
+                }
+                Err(e) => {
+                    log::error!("{}", e.to_string());
+                    return false;
+                }
+            };
+
+            log::info!("Zabbix version response - {}", zbx_response);
+
+            let auth_payload = json!({
+                "jsonrpc": "2.0",
+                "method": "authentication.get",
+                "params": {
+                    "output": "extend"
+                },
+                "auth": format!("{}", self.auth_key),
+                "id": 1
+            });
+
+            match query_zabbix(self, auth_payload) {
+                Ok(response) => {
+                    if !response.is_object() {
+                        log::error!("Response - {:?} is not an object type", response);
+                        return false;
+                    };
+
+                    log::debug!("Authentication Check response - {:?}", response);
+                }
+                Err(e) => {
+                    log::error!("{}", e.to_string());
+                    return false;
+                }
+            };
+
+            return true;
+        }
+
         fn process_webhook(&self) -> Result<AlertList, Box<dyn Error>> {
             return Ok(Vec::new());
         }

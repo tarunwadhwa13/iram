@@ -1,6 +1,6 @@
 use super::schema::alert_source_info;
-use chrono::{DateTime, Utc};
 use bigdecimal::BigDecimal;
+use chrono::{DateTime, Utc};
 
 // Using #[derive(Queryable)] assumes that the order of fields in struct
 // matches the columns in table, so make sure to define them in the order seen in the schema.rs file.
@@ -23,7 +23,7 @@ pub struct NewAlertSourceInfo<'a> {
     pub connect_url: &'a str,
     pub auth_type: &'a str,
     pub connection_params: &'a serde_json::Value,
-    pub enabled: &'a bool,
+    pub enabled: bool,
 }
 
 #[derive(Queryable, PartialEq, Clone)]
@@ -72,14 +72,14 @@ impl Users {
     pub fn last_login_str(&self) -> Option<String> {
         match self.last_login() {
             Some(result) => return Some(result.to_rfc3339()),
-            None => return None
+            None => return None,
         };
     }
 
     pub fn date_joined_str(&self) -> Option<String> {
         match self.date_joined() {
             Some(result) => return Some(result.to_rfc3339()),
-            None => return None
+            None => return None,
         };
     }
 }
@@ -95,7 +95,7 @@ pub struct IncidentReport {
     pub status: String,
     pub resolution: String,
     created_at: DateTime<Utc>,
-    last_updated: DateTime<Utc>
+    last_updated: DateTime<Utc>,
 }
 
 impl IncidentReport {
@@ -111,7 +111,7 @@ impl IncidentReport {
     }
 
     pub fn last_updated_str(&self) -> String {
-        self.last_updated().to_rfc3339() 
+        self.last_updated().to_rfc3339()
     }
 
     pub fn acked_at_str(&self) -> String {
@@ -121,7 +121,7 @@ impl IncidentReport {
     pub fn resolved_at_str(&self) -> Option<String> {
         match self.resolved_at {
             Some(value) => Some(value.to_rfc3339()),
-            None => None
+            None => None,
         }
     }
 }
@@ -129,5 +129,5 @@ impl IncidentReport {
 #[derive(Queryable, PartialEq, Clone)]
 pub struct IncidentAlert {
     pub incident_id: i32,
-    pub alert_id: i32
+    pub alert_id: i32,
 }

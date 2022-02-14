@@ -1,4 +1,5 @@
 pub mod base;
+pub mod cloudwatch;
 pub mod new_relic;
 pub mod response;
 pub mod zabbix;
@@ -6,6 +7,7 @@ pub mod zabbix;
 use crate::alert_sources::base::AlertSource;
 use std::error::Error;
 
+use cloudwatch::CloudWatch::CloudWatchHandler;
 use new_relic::NewRelic::NewRelicHandler;
 use zabbix::zabbix::ZabbixHandler;
 
@@ -51,6 +53,11 @@ pub fn get_alert_source_handler(
             }
             "newrelic" => {
                 return Ok(Box::new(NewRelicHandler::new_from_object(
+                    alert_source_details,
+                )));
+            }
+            "cloudwatch" => {
+                return Ok(Box::new(CloudWatchHandler::new_from_object(
                     alert_source_details,
                 )));
             }

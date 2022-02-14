@@ -1,16 +1,36 @@
 use super::controller;
 use super::defs::{
-    GQLAlertEvent, GQLAlertList, GQLIncidentReport, GQLIncidentReportList, GQLNewAlertEvent,
+    GQLAlertEvent, GQLAlertList, GQLAlertSource, GQLAlertSourceList, GQLIncidentReport,
+    GQLIncidentReportList, GQLNewAlertSource,
 };
+use crate::models::NewAlertSourceInfo;
 use bigdecimal::ToPrimitive;
-use juniper::FieldResult;
 use juniper::{EmptySubscription, RootNode};
+use juniper::{FieldError, FieldResult, Value as juniperValue};
+use serde_json::Value as jsonValue;
 use std::collections::HashMap;
 
 pub struct QueryRoot;
 
 #[juniper::graphql_object]
 impl QueryRoot {
+    fn alert_sources() -> FieldResult<GQLAlertSourceList> {
+        let query_response = controller::get_alert_sources();
+
+        let mut alert_source_list: GQLAlertSourceList = Vec::new();
+        for entry in query_response.into_iter() {
+            alert_source_list.push(GQLAlertSource {
+                id: entry.id,
+                source_type: entry.source_type.to_string(),
+                identifier: entry.identifier.to_string(),
+                connect_url: entry.connect_url.to_string(),
+                auth_type: entry.auth_type.to_string(),
+                enabled: entry.enabled,
+            });
+        }
+        return Ok(alert_source_list);
+    }
+
     fn active_alerts() -> FieldResult<GQLAlertList> {
         let query_response = controller::get_active_alerts();
 
@@ -58,7 +78,7 @@ impl QueryRoot {
 
         let mut incidents: HashMap<i32, GQLIncidentReport> = HashMap::new();
 
-        let alert_list: GQLIncidentReportList;
+        let incident_reports: GQLIncidentReportList;
         for entry in query_response.into_iter() {
             let _incident_alert = entry.0;
             let incident_report = entry.1;
@@ -90,17 +110,55 @@ impl QueryRoot {
                 incidents.insert(incident_report.id, incident_obj);
             }
         }
-        alert_list = incidents.into_values().collect();
-        return Ok(alert_list);
+        incident_reports = incidents.into_values().collect();
+        return Ok(incident_reports);
     }
+
+    // fn subscriptions() -> FieldResult<GQLSubscription> {
+    //     Ok()
+    // }
 }
 
 pub struct MutationRoot;
 
 #[juniper::graphql_object]
 impl MutationRoot {
-    fn create_human(_alert: GQLNewAlertEvent) -> FieldResult<bool> {
-        Ok(true)
+    fn create_alert_source(mut alert_source: GQLNewAlertSource) -> FieldResult<bool> {
+        // convert string params to json
+        let parsed_params: jsonValue;
+        match serde_json::from_str(alert_source.connection_params.as_str()) {
+            Ok(params) => {
+                parsed_params = params;
+            }
+            Err(e) => {
+                log::error!(
+                    "Cannot parse connection params as json. Error - {}",
+                    e.to_string()
+                );
+                return Err(FieldError::new(e.to_string(), juniperValue::Null));
+            }
+        };
+
+        let alert_source_obj = NewAlertSourceInfo {
+            source_type: alert_source.source_type.as_str(),
+            identifier: alert_source.identifier.as_str(),
+            connection_params: &parsed_params,
+            auth_type: alert_source.auth_type.as_str(),
+            connect_url: alert_source.connect_url.as_str(),
+            enabled: alert_source.enabled,
+        };
+
+        // Test connection to make sure data is valid
+
+        match controller::create_alert_source(alert_source_obj) {
+            Ok(res) => {
+                return Ok(res);
+            }
+            Err(e) => {
+                log::error!("{}", e.to_string());
+                return Err(FieldError::new(e.to_string(), juniperValue::Null));
+            }
+        };
     }
 }
 

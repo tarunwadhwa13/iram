@@ -1,6 +1,8 @@
 # IRAM (Incident Response and Alert Management Tool)
 [![Build](https://github.com/tarunwadhwa13/iram/actions/workflows/build.yml/badge.svg)](https://github.com/tarunwadhwa13/iram/actions/workflows/build.yml)
 
+This repo contains backend code only. For frontend code, check [iram-ui](https://github.com/tarunwadhwa13/iram-ui)
+
 Planned Features:
 1) Collate alerts from various sources and show them on a common UI
 2) Support for both polling based and event based mechanism

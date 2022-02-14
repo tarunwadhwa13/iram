@@ -10,7 +10,7 @@ pub struct AppUser {
     pub is_admin: bool,
     pub groups: Vec<String>,
     pub is_authenticated: bool,
-    pub is_active: bool
+    pub is_active: bool,
 }
 
 impl AppUser {
@@ -33,8 +33,8 @@ impl AppUser {
     pub fn check_group_membership(&self, group_name: String) -> bool {
         self.groups.contains(&group_name)
     }
-    
+
     pub fn get_all_groups(&self) -> Vec<String> {
-        return self.groups.clone()
+        return self.groups.clone();
     }
 }

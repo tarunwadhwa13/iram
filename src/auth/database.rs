@@ -1,12 +1,12 @@
-use std::error::Error;
-use crate::errors::AuthenticationError;
-use super::utils;
-use crate::models::Users;
-use crate::db::get_connection;
-use crate::schema::users;
-use crate::diesel::QueryDsl;
-use diesel::{ExpressionMethods, RunQueryDsl};
 use super::user::AppUser;
+use super::utils;
+use crate::db::get_connection;
+use crate::diesel::QueryDsl;
+use crate::errors::AuthenticationError;
+use crate::models::Users;
+use crate::schema::users;
+use diesel::{ExpressionMethods, RunQueryDsl};
+use std::error::Error;
 
 /// Used to add a user in database. Only admin users or users with permission 'add_user'
 /// are allowed to add perform this action
@@ -15,7 +15,7 @@ pub fn add_user(_user: AppUser, password: String) -> Result<bool, Box<dyn Error>
 }
 
 /// Unauthenticated call, used for make first default user in database.
-/// Username is static and password is requested from user. 
+/// Username is static and password is requested from user.
 /// If default user already exists, API returns an error
 pub fn add_default_user(password: String, email: String) -> Result<bool, Box<dyn Error>> {
     let default_admin_user: AppUser = AppUser {
@@ -27,7 +27,7 @@ pub fn add_default_user(password: String, email: String) -> Result<bool, Box<dyn
         permissions: Vec::new(),
         groups: Vec::new(),
         is_authenticated: false,
-        is_active: true
+        is_active: true,
     };
     add_user(default_admin_user, password)
 }
@@ -40,30 +40,39 @@ pub fn authenticate(username: String, password: String) -> Result<AppUser, Authe
         .filter(users::dsl::username.eq(username.clone()))
         .load::<Users>(&connection)
         .expect("Error loading alert source");
-    
-    if query_response.len() == 0 {
-        let err_msg = format!(
-            "User with username - {} not found in database", username.clone()
-        );
+
+    if query_response.is_empty() {
+        let err_msg = format!("User with username - {} not found in database", &username);
         log::warn!("{}", err_msg);
         return Err(AuthenticationError(err_msg));
     } else {
         let user = &query_response[0];
         match utils::verify_password(password, query_response[0].get_password()) {
-            Ok(result) if result == true => return Ok(AppUser {
-                username: user.username.to_string(),
-                first_name: user.first_name.to_string(),
-                last_name: user.last_name.to_string(),
-                email: user.email.to_string(),
-                is_active: user.is_active,
-                is_authenticated: true,
-                is_admin: user.is_admin,
-                groups: Vec::new(),
-                permissions: Vec::new()
-            }),
-            Ok(result) if result == false => return Err(AuthenticationError(format!("Password verification failed for user - {}", username))),
-            Ok(_) => return Err(AuthenticationError("Unknown Error during password verification".to_string())),
-            Err(e) => return Err(AuthenticationError(e.to_string()))
+            Ok(result) if result => {
+                return Ok(AppUser {
+                    username: user.username.to_string(),
+                    first_name: user.first_name.to_string(),
+                    last_name: user.last_name.to_string(),
+                    email: user.email.to_string(),
+                    is_active: user.is_active,
+                    is_authenticated: true,
+                    is_admin: user.is_admin,
+                    groups: Vec::new(),
+                    permissions: Vec::new(),
+                })
+            }
+            Ok(result) if !result => {
+                return Err(AuthenticationError(format!(
+                    "Password verification failed for user - {}",
+                    username
+                )))
+            }
+            Ok(_) => {
+                return Err(AuthenticationError(
+                    "Unknown Error during password verification".to_string(),
+                ))
+            }
+            Err(e) => return Err(AuthenticationError(e.to_string())),
         };
     }
 }

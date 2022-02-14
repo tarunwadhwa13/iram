@@ -83,9 +83,30 @@ table! {
 }
 
 table! {
+    notification_channel (id) {
+        id -> Int4,
+        destination -> Varchar,
+        settings -> Jsonb,
+        active_start_time -> Timestamptz,
+        active_end_time -> Timestamptz,
+        enabled -> Bool,
+    }
+}
+
+table! {
     permission (key) {
         key -> Varchar,
         description -> Varchar,
+    }
+}
+
+table! {
+    subscription (id) {
+        id -> Int4,
+        alert_id -> Nullable<Int4>,
+        user_id -> Nullable<Int4>,
+        granularity -> Varchar,
+        notification_channel -> Nullable<Int4>,
     }
 }
 
@@ -138,6 +159,9 @@ joinable!(alerts -> users (assigned_user_id));
 joinable!(group_permissions -> groups (group_id));
 joinable!(incident_alert -> alerts (alert_id));
 joinable!(incident_alert -> incident_report (incident_id));
+joinable!(subscription -> alerts (alert_id));
+joinable!(subscription -> notification_channel (notification_channel));
+joinable!(subscription -> users (user_id));
 joinable!(user_groups -> groups (group_id));
 joinable!(user_groups -> users (user_id));
 joinable!(user_notes -> alerts (alert_id));
@@ -152,7 +176,9 @@ allow_tables_to_appear_in_same_query!(
     groups,
     incident_alert,
     incident_report,
+    notification_channel,
     permission,
+    subscription,
     tags,
     user_groups,
     user_notes,

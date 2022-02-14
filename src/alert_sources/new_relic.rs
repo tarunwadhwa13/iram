@@ -29,6 +29,10 @@ pub mod NewRelic {
             "newrelic"
         }
 
+        fn test_connection(&mut self) -> bool {
+            true
+        }
+
         fn process_webhook(&self) -> Result<AlertList, Box<dyn Error>> {
             return Ok(Vec::new());
         }

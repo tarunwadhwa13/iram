@@ -115,7 +115,6 @@ impl Error for HashingModuleError {}
 impl Error for AuthenticationError {}
 impl Error for AuthorizationError {}
 
-
 impl error::ResponseError for ZabbixError {}
 impl error::ResponseError for DBConnectionError {}
 impl error::ResponseError for GenericError {}

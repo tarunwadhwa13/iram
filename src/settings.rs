@@ -27,6 +27,7 @@ pub struct Settings {
     pub database: Database,
     pub alert_sources: SelectedFeature<String>,
     pub auth_backends: SelectedFeature<String>,
+    pub notification_destinations: SelectedFeature<String>,
 }
 
 const CONFIG_FILE_PATH: &str = "./config/Default.toml";

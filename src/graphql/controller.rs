@@ -1,9 +1,12 @@
-use crate::diesel::QueryDsl;
-use crate::db::get_connection;
-use crate::schema::{alert_source_info, alerts, users, incident_report, incident_alert};
-use diesel::{ExpressionMethods, RunQueryDsl};
-use crate::models::{AlertSourceInfo, Alerts, Users, IncidentReport, IncidentAlert};
 use super::defs::{GQLAlertEvent, GQLUser};
+use crate::db::get_connection;
+use crate::diesel::QueryDsl;
+use crate::errors::GenericAlertSourceError;
+use crate::models::{
+    AlertSourceInfo, Alerts, IncidentAlert, IncidentReport, NewAlertSourceInfo, Users,
+};
+use crate::schema::{alert_source_info, alerts, incident_alert, incident_report, users};
+use diesel::{ExpressionMethods, RunQueryDsl};
 
 pub fn get_active_alerts() -> Vec<(Alerts, AlertSourceInfo, Users)> {
     let connection = get_connection().unwrap();
@@ -55,26 +58,66 @@ pub fn get_assigned_alerts(user_id: i32) -> Vec<(Alerts, AlertSourceInfo, Users)
     return query_response;
 }
 
-pub fn get_incident_reports() -> Vec<(IncidentAlert, IncidentReport, (Alerts, AlertSourceInfo, Users))> {
+pub fn get_incident_reports() -> Vec<(
+    IncidentAlert,
+    IncidentReport,
+    (Alerts, AlertSourceInfo, Users),
+)> {
     let connection = get_connection().unwrap();
 
     let query_response = incident_alert::dsl::incident_alert
         .inner_join(incident_report::table)
         .inner_join(
-            alerts::table.inner_join(alert_source_info::table).inner_join(users::table)
+            alerts::table
+                .inner_join(alert_source_info::table)
+                .inner_join(users::table),
         )
-        .load::<(IncidentAlert, IncidentReport, (Alerts, AlertSourceInfo, Users))>(&connection)
+        .load::<(
+            IncidentAlert,
+            IncidentReport,
+            (Alerts, AlertSourceInfo, Users),
+        )>(&connection)
         .expect("Encountered DB Error while loading alerts assigned to user");
 
-    log::info!(
-        "Got {} incident reports", query_response.len()
-    );
+    log::info!("Got {} incident reports", query_response.len());
     return query_response;
 }
 
+pub fn get_alert_sources() -> Vec<AlertSourceInfo> {
+    let connection = get_connection().unwrap();
+
+    let query_response = alert_source_info::dsl::alert_source_info
+        .load::<AlertSourceInfo>(&connection)
+        .expect("Encountered DB Error while fetching alert sources");
+
+    log::info!("Got {} alert sources registered", query_response.len());
+    return query_response;
+}
+
+pub fn create_alert_source(
+    alert_source: NewAlertSourceInfo,
+) -> Result<bool, GenericAlertSourceError> {
+    let connection = get_connection().unwrap();
+
+    let rows_inserted = diesel::insert_into(alert_source_info::table)
+        .values(&alert_source)
+        .execute(&connection);
+
+    if let Ok(i) = rows_inserted {
+        return Ok(true);
+    } else {
+        return Err(GenericAlertSourceError(
+            "Failed to insert entry in Database".to_string(),
+        ));
+    }
+}
 
 impl GQLAlertEvent {
-    pub fn generate_from_db_objects(alert: Alerts, alert_source: AlertSourceInfo, user: Users) -> Self {
+    pub fn generate_from_db_objects(
+        alert: Alerts,
+        alert_source: AlertSourceInfo,
+        user: Users,
+    ) -> Self {
         Self {
             id: alert.id.to_string(),
             source_type: alert_source.source_type,
@@ -96,8 +139,8 @@ impl GQLAlertEvent {
                 email: user.email.to_string(),
                 is_admin: user.is_admin,
                 last_login: user.last_login_str().unwrap_or("".to_string()),
-                date_joined: user.date_joined_str().unwrap_or("".to_string())
-            }
+                date_joined: user.date_joined_str().unwrap_or("".to_string()),
+            },
         }
     }
 }

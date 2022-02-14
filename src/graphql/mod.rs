@@ -1,6 +1,6 @@
-pub mod schema;
-mod defs;
 mod controller;
+mod defs;
+pub mod schema;
 
 use crate::settings;
 

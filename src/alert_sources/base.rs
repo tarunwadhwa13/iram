@@ -14,6 +14,9 @@ pub trait AlertSource {
     /// Should return source for the alert. This can any identifier for alert source type
     fn get_source_name(&self) -> &str;
 
+    /// Used to test connection to the alert source. Connection testing can vary from ensuring connectivity to verifying credentials
+    fn test_connection(&mut self) -> bool;
+
     /// function used for processing webhook received. This is responsible for processing webhook and returning alert list.
     /// Either this or get_active_alerts should be implemented
     fn process_webhook(&self) -> Result<AlertList, Box<dyn Error>> {
