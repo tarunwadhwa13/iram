@@ -2,7 +2,7 @@
 // extern crate lazy_static;
 
 use actix_cors::Cors;
-use actix_web::{http, middleware::Logger, web, App, HttpServer};
+use actix_web::{http, middleware::Logger, web, web::Data, App, HttpServer};
 use log::info;
 use log4rs;
 
@@ -46,7 +46,7 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .wrap(cors)
             .wrap(Logger::default())
-            .data(CONFIG.clone())
+            .app_data(Data::new(CONFIG.clone()))
             .service(
                 web::resource("/api/webhook/{source}/{identifier}")
                     .route(web::get().to(handle_webhook)),

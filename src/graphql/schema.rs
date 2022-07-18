@@ -148,7 +148,7 @@ impl MutationRoot {
             enabled: alert_source.enabled,
         };
 
-        // Test connection to make sure data is valid
+        // TODO: Test connection to make sure data is valid
 
         match controller::create_alert_source(alert_source_obj) {
             Ok(res) => {

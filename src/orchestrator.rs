@@ -11,8 +11,9 @@ pub struct WebhookResponse {
 
 pub async fn handle_webhook(
     _req: HttpRequest,
-    web::Path((source, identifier)): web::Path<(String, String)>,
+    path: web::Path<(String,String)>,
 ) -> Result<impl Responder> {
+    let (source, identifier) = path.into_inner();
     log::info!(
         "Creating alert source handler for - {} | Identifier - {}",
         source,
