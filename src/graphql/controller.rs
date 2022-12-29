@@ -9,14 +9,14 @@ use crate::schema::{alert_source_info, alerts, incident_alert, incident_report, 
 use diesel::{ExpressionMethods, RunQueryDsl};
 
 pub fn get_active_alerts() -> Vec<(Alerts, AlertSourceInfo, Users)> {
-    let connection = get_connection().unwrap();
+    let connection = &mut get_connection().unwrap();
 
     let query_response = alerts::dsl::alerts
         .inner_join(alert_source_info::table)
         .inner_join(users::table)
         .filter(alert_source_info::dsl::enabled.eq(true))
         .filter(alerts::dsl::state.ne("resolved".to_string()))
-        .load::<(Alerts, AlertSourceInfo, Users)>(&connection)
+        .load::<(Alerts, AlertSourceInfo, Users)>(connection)
         .expect("Encountered DB Error while loading alerts assigned to user");
 
     log::info!("Got {} active alerts", query_response.len());
@@ -24,14 +24,14 @@ pub fn get_active_alerts() -> Vec<(Alerts, AlertSourceInfo, Users)> {
 }
 
 pub fn get_past_alerts() -> Vec<(Alerts, AlertSourceInfo, Users)> {
-    let connection = get_connection().unwrap();
+    let connection = &mut get_connection().unwrap();
 
     let query_response = alerts::dsl::alerts
         .inner_join(alert_source_info::table)
         .inner_join(users::table)
         .filter(alert_source_info::dsl::enabled.eq(true))
         .filter(alerts::dsl::state.eq("resolved".to_string()))
-        .load::<(Alerts, AlertSourceInfo, Users)>(&connection)
+        .load::<(Alerts, AlertSourceInfo, Users)>(connection)
         .expect("Encountered DB Error while loading alerts assigned to user");
 
     log::info!("Got {} past alerts", query_response.len());
@@ -39,7 +39,7 @@ pub fn get_past_alerts() -> Vec<(Alerts, AlertSourceInfo, Users)> {
 }
 
 pub fn get_assigned_alerts(user_id: i32) -> Vec<(Alerts, AlertSourceInfo, Users)> {
-    let connection = get_connection().unwrap();
+    let connection = &mut get_connection().unwrap();
 
     let query_response = alerts::dsl::alerts
         .inner_join(alert_source_info::table)
@@ -47,7 +47,7 @@ pub fn get_assigned_alerts(user_id: i32) -> Vec<(Alerts, AlertSourceInfo, Users)
         .filter(alert_source_info::dsl::enabled.eq(true))
         .filter(alerts::dsl::state.ne("resolved".to_string()))
         .filter(alerts::dsl::assigned_user_id.eq(user_id))
-        .load::<(Alerts, AlertSourceInfo, Users)>(&connection)
+        .load::<(Alerts, AlertSourceInfo, Users)>(connection)
         .expect("Encountered DB Error while loading alerts assigned to user");
 
     log::info!(
@@ -58,36 +58,36 @@ pub fn get_assigned_alerts(user_id: i32) -> Vec<(Alerts, AlertSourceInfo, Users)
     return query_response;
 }
 
-pub fn get_incident_reports() -> Vec<(
-    IncidentAlert,
-    IncidentReport,
-    (Alerts, AlertSourceInfo, Users),
-)> {
-    let connection = get_connection().unwrap();
+// pub fn get_incident_reports() -> Vec<(
+//     IncidentAlert,
+//     IncidentReport,
+//     (Alerts, AlertSourceInfo, Users),
+// )> {
+//     let connection = get_connection().unwrap();
 
-    let query_response = incident_alert::dsl::incident_alert
-        .inner_join(incident_report::table)
-        .inner_join(
-            alerts::table
-                .inner_join(alert_source_info::table)
-                .inner_join(users::table),
-        )
-        .load::<(
-            IncidentAlert,
-            IncidentReport,
-            (Alerts, AlertSourceInfo, Users),
-        )>(&connection)
-        .expect("Encountered DB Error while loading alerts assigned to user");
+//     let query_response = incident_alert::dsl::incident_alert
+//         .inner_join(incident_report::table)
+//         .inner_join(
+//             alerts::table
+//                 .inner_join(alert_source_info::table)
+//                 .inner_join(users::table),
+//         )
+//         .load::<(
+//             IncidentAlert,
+//             IncidentReport,
+//             (Alerts, AlertSourceInfo, Users),
+//         )>(&mut connection)
+//         .expect("Encountered DB Error while loading alerts assigned to user");
 
-    log::info!("Got {} incident reports", query_response.len());
-    return query_response;
-}
+//     log::info!("Got {} incident reports", query_response.len());
+//     return query_response;
+// }
 
 pub fn get_alert_sources() -> Vec<AlertSourceInfo> {
-    let connection = get_connection().unwrap();
+    let connection = &mut get_connection().unwrap();
 
     let query_response = alert_source_info::dsl::alert_source_info
-        .load::<AlertSourceInfo>(&connection)
+        .load::<AlertSourceInfo>(connection)
         .expect("Encountered DB Error while fetching alert sources");
 
     log::info!("Got {} alert sources registered", query_response.len());
@@ -97,11 +97,11 @@ pub fn get_alert_sources() -> Vec<AlertSourceInfo> {
 pub fn create_alert_source(
     alert_source: NewAlertSourceInfo,
 ) -> Result<bool, GenericAlertSourceError> {
-    let connection = get_connection().unwrap();
+    let connection = &mut get_connection().unwrap();
 
     let rows_inserted = diesel::insert_into(alert_source_info::table)
         .values(&alert_source)
-        .execute(&connection);
+        .execute(connection);
 
     if let Ok(i) = rows_inserted {
         return Ok(true);

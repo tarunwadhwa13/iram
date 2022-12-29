@@ -23,7 +23,7 @@ pub fn get_alert_source_handler(
     source: &str,
     identifier: &str,
 ) -> Result<Box<dyn AlertSource>, Box<dyn Error>> {
-    let connection = get_connection().unwrap();
+    let connection = &mut get_connection().unwrap();
 
     let source_query = source.replace(&['%', '.', '\'', ' '][..], "");
     let identifier_query = identifier.replace(&['%', '.', '\'', ' '][..], "");
@@ -32,7 +32,7 @@ pub fn get_alert_source_handler(
         .filter(dsl::source_type.ilike(source_query))
         .filter(dsl::identifier.ilike(identifier_query))
         .filter(dsl::enabled.eq(true))
-        .load::<AlertSourceInfo>(&connection)
+        .load::<AlertSourceInfo>(connection)
         .expect("Error loading alert source");
 
     log::info!("Got {} alert sources", query_response.len());

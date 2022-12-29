@@ -34,11 +34,11 @@ pub fn add_default_user(password: String, email: String) -> Result<bool, Box<dyn
 
 /// This function is used to authenticate user with entered password.
 pub fn authenticate(username: String, password: String) -> Result<AppUser, AuthenticationError> {
-    let connection = get_connection().unwrap();
+    let connection = &mut get_connection().unwrap();
 
     let query_response = users::dsl::users
         .filter(users::dsl::username.eq(username.clone()))
-        .load::<Users>(&connection)
+        .load::<Users>(connection)
         .expect("Error loading alert source");
 
     if query_response.is_empty() {
