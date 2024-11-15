@@ -15,29 +15,36 @@ pub struct Database {
 }
 
 #[derive(Debug, Deserialize, Clone)]
+pub struct SelectedFeature<T> {
+    pub supported: Vec<T>,
+    pub enabled: Vec<T>,
+}
+
+#[derive(Debug, Deserialize, Clone)]
 pub struct Settings {
     pub server: Server,
     pub env: ENV,
     pub database: Database,
+    pub alert_sources: SelectedFeature<String>,
+    pub auth_backends: SelectedFeature<String>,
+    pub notification_destinations: SelectedFeature<String>,
 }
 
 const CONFIG_FILE_PATH: &str = "./config/Default.toml";
 const CONFIG_FILE_PREFIX: &str = "./config/";
 
-
 impl Settings {
     pub fn new() -> Result<Self, ConfigError> {
         let env = std::env::var("RUN_ENV").unwrap_or_else(|_| "Dev".into());
-        let mut s = Config::new();
-        s.set("env", env.clone())?;
+        let builder = Config::builder()
+            .set_override("env", env.clone())?
+            .add_source(File::with_name(CONFIG_FILE_PATH))
+            .add_source(File::with_name(&format!("{}{}", CONFIG_FILE_PREFIX, env)))
+            // This makes it so "IRAM_SERVER__PORT overrides server.port
+            .add_source(Environment::with_prefix("iram").separator("__"))
+            .build()?;
 
-        s.merge(File::with_name(CONFIG_FILE_PATH))?;
-        s.merge(File::with_name(&format!("{}{}", CONFIG_FILE_PREFIX, env)))?;
-
-        // This makes it so "AMP_SERVER__PORT overrides server.port
-        s.merge(Environment::with_prefix("amp").separator("__"))?;
-
-        s.try_into()
+        builder.try_deserialize()
     }
 }
 

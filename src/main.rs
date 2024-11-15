@@ -1,20 +1,23 @@
 // #[macro_use]
 // extern crate lazy_static;
 
-use actix_web::{middleware::Logger, web, App, HttpRequest, HttpServer, Responder};
+use actix_cors::Cors;
+use actix_web::{http, middleware::Logger, web, web::Data, App, HttpServer};
 use log::info;
 use log4rs;
 
-use amp::configstore::CONFIG;
-
-async fn manual_hello(_req: HttpRequest) -> impl Responder {
-    format!("Hello There !!")
-}
+use iram::configstore::CONFIG;
+use iram::db;
+use iram::graphql::register_graphql_service;
+use iram::orchestrator::handle_webhook;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     println!("🚀 Booting Up Systems 🚀");
     log4rs::init_file("config/log_config.yml", Default::default()).unwrap();
+
+    println!("✅ Checking connection to downstream services ✅");
+    let _ = db::get_connection();
 
     println!(
         "✨ Starting Alert Monitoring Platform ✨ !!
@@ -34,10 +37,21 @@ async fn main() -> std::io::Result<()> {
     );
 
     HttpServer::new(move || {
+        let cors = Cors::default()
+            .allow_any_origin()
+            .allowed_methods(vec!["GET", "POST"])
+            .allowed_headers(vec![http::header::AUTHORIZATION, http::header::ACCEPT])
+            .allowed_header(http::header::CONTENT_TYPE)
+            .max_age(3600);
         App::new()
+            .wrap(cors)
             .wrap(Logger::default())
-            .data(CONFIG.clone())
-            .route("/health", web::get().to(manual_hello))
+            .app_data(Data::new(CONFIG.clone()))
+            .service(
+                web::resource("/api/webhook/{source}/{identifier}")
+                    .route(web::get().to(handle_webhook)),
+            )
+            .configure(register_graphql_service)
     })
     .bind(format!("{}:{}", CONFIG.server.host, CONFIG.server.port))?
     .run()

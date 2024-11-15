@@ -1,5 +1,6 @@
 use std::fmt;
 
+use actix_web::error;
 use std::error::Error;
 
 // Zabbix Error
@@ -27,6 +28,14 @@ pub struct SettingsError(pub String); // used in settings module
 #[derive(Debug)]
 pub struct UnsupportedError(pub String); // used when attribute is unsupported
 
+#[derive(Debug)]
+pub struct HashingModuleError(pub String); // used for hash module errors
+
+#[derive(Debug)]
+pub struct AuthenticationError(pub String); // used for authentication related errors
+
+#[derive(Debug)]
+pub struct AuthorizationError(pub String); // used for authorization related errors
 
 impl fmt::Display for ZabbixError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -76,6 +85,24 @@ impl fmt::Display for UnsupportedError {
     }
 }
 
+impl fmt::Display for HashingModuleError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "HashingModuleError: {}", self.0)
+    }
+}
+
+impl fmt::Display for AuthenticationError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "AuthenticationError: {}", self.0)
+    }
+}
+
+impl fmt::Display for AuthorizationError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "AuthorizationError: {}", self.0)
+    }
+}
+
 impl Error for ZabbixError {}
 impl Error for DBConnectionError {}
 impl Error for GenericError {}
@@ -84,3 +111,18 @@ impl Error for UnsupportedError {}
 impl Error for NewRelicError {}
 impl Error for ManageEngineError {}
 impl Error for SettingsError {}
+impl Error for HashingModuleError {}
+impl Error for AuthenticationError {}
+impl Error for AuthorizationError {}
+
+impl error::ResponseError for ZabbixError {}
+impl error::ResponseError for DBConnectionError {}
+impl error::ResponseError for GenericError {}
+impl error::ResponseError for GenericAlertSourceError {}
+impl error::ResponseError for UnsupportedError {}
+impl error::ResponseError for NewRelicError {}
+impl error::ResponseError for ManageEngineError {}
+impl error::ResponseError for SettingsError {}
+impl error::ResponseError for HashingModuleError {}
+impl error::ResponseError for AuthenticationError {}
+impl error::ResponseError for AuthorizationError {}

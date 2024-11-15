@@ -1,0 +1,12 @@
+[auth_backends]
+supported=["database", "okta"]
+enabled=["database"]
+
+[alert_sources]
+supported=["Zabbix", "NewRelic"]
+enabled=["Zabbix"]
+
+[notification_destinations]
+supported=["email","slack"]
+enabled=["email"]
+

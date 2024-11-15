@@ -22,27 +22,32 @@ appenders:
     path: "logs/access.log"
 
 root:
-  level: info
+  level: debug
   appenders:
     - stdout
 loggers:
   actix_server:
-    level: info
+    level: debug
     appenders:
       - server_log
     additive: false
   actix_web::middleware::logger:
-    level: info
+    level: debug
     appenders:
       - access_log
     additive: false
-  amp:
-    level: info
+  actix_web:
+    level: debug
     appenders:
       - app_log
     additive: false
-  alert_sources:
-    level: info
+  actix_http:
+    level: debug
+    appenders:
+      - app_log
+    additive: false
+  iram:
+    level: debug
     appenders:
       - app_log
     additive: false
